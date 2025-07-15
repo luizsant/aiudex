@@ -354,7 +354,8 @@ class BackupAuditService {
         severity: "critical",
         category: "system",
         success: false,
-        errorMessage: error.message,
+        errorMessage:
+          error instanceof Error ? error.message : "Erro desconhecido",
       });
 
       console.error("Erro ao restaurar backup:", error);

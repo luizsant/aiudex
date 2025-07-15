@@ -65,7 +65,8 @@ export class MetricsService {
 
     if (useAPI) {
       try {
-        return await metricsServiceAPI.getMetrics();
+        const metrics = await metricsServiceAPI.getMetrics();
+        if (metrics) return metrics;
       } catch (error) {
         console.log("⚠️ Erro na API, usando localStorage");
         this.useAPI = false;
@@ -73,7 +74,7 @@ export class MetricsService {
     }
 
     // Fallback para localStorage
-    const existing = this.getUserMetrics();
+    const existing = await this.getUserMetrics();
     if (existing) return existing;
 
     const initialMetrics: UserMetrics = {
@@ -119,7 +120,10 @@ export class MetricsService {
 
     if (useAPI) {
       try {
-        await metricsServiceAPI.updateMetrics(metrics);
+        await metricsServiceAPI.updateMetrics({
+          ...metrics,
+          primeiraPeca: metrics.primeiraPeca || undefined,
+        });
         return;
       } catch (error) {
         console.log("⚠️ Erro na API, usando localStorage");

@@ -38,7 +38,9 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
 // Componente de verificação de pagamento já realizado
 const PaymentAlreadyCompleted = () => {
@@ -498,7 +500,9 @@ const CheckoutForm = () => {
       });
 
       if (error) {
-        setError(error.message || "Erro no pagamento");
+        const errorMessage =
+          error instanceof Error ? error.message : "Erro no pagamento";
+        setError(errorMessage);
         setLoading(false);
         return;
       }

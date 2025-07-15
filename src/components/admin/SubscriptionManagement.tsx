@@ -51,8 +51,15 @@ interface Subscription {
   autoRenew: boolean;
 }
 
+interface Plan {
+  id: string;
+  name: string;
+  price: number;
+  benefits: string[];
+}
+
 // MOCK: Planos disponíveis
-const mockPlans = [
+const mockPlans: Plan[] = [
   {
     id: "plan_free",
     name: "Free",
@@ -90,21 +97,31 @@ const mockPlans = [
 ];
 
 // Adicionar PlanModal mock
-const PlanModal = ({ plan, onClose, onSave }) => {
-  const [name, setName] = useState(plan?.name || "");
-  const [price, setPrice] = useState(plan?.price || 0);
-  const [benefits, setBenefits] = useState(plan?.benefits?.join("\n") || "");
+const PlanModal = ({
+  plan,
+  onClose,
+  onSave,
+}: {
+  plan?: Plan;
+  onClose: () => void;
+  onSave: (plan: Plan) => void;
+}) => {
+  const [name, setName] = useState<string>(plan?.name || "");
+  const [price, setPrice] = useState<number>(plan?.price || 0);
+  const [benefits, setBenefits] = useState<string>(
+    plan?.benefits?.join("\n") || ""
+  );
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
-      id: plan?.id,
+      id: plan?.id || `plan_${Date.now()}`,
       name,
-      price: parseFloat(price),
+      price: parseFloat(String(price)),
       benefits: benefits
         .split("\n")
-        .map((b) => b.trim())
-        .filter(Boolean),
+        .map((b: string) => b.trim())
+        .filter((b: string) => Boolean(b)),
     });
   };
 
@@ -133,7 +150,7 @@ const PlanModal = ({ plan, onClose, onSave }) => {
             min="0"
             step="0.01"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => setPrice(Number(e.target.value))}
             required
           />
         </div>
@@ -168,17 +185,17 @@ const PlanModal = ({ plan, onClose, onSave }) => {
 
 const SubscriptionManagement = () => {
   // Estado dos planos
-  const [plans, setPlans] = useState([]);
-  const [plansLoading, setPlansLoading] = useState(true);
-  const [plansError, setPlansError] = useState(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plansLoading, setPlansLoading] = useState<boolean>(true);
+  const [plansError, setPlansError] = useState<string | null>(null);
 
   // Estado das assinaturas
-  const [subscriptions, setSubscriptions] = useState([]);
-  const [subsLoading, setSubsLoading] = useState(true);
-  const [subsError, setSubsError] = useState(null);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [subsLoading, setSubsLoading] = useState<boolean>(true);
+  const [subsError, setSubsError] = useState<string | null>(null);
 
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null);
+  const [showPlanModal, setShowPlanModal] = useState<boolean>(false);
+  const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
 
   // Carregar planos da API
   useEffect(() => {
@@ -188,12 +205,14 @@ const SubscriptionManagement = () => {
         if (!res.ok) throw new Error("Erro ao buscar planos");
         return res.json();
       })
-      .then((json) => {
+      .then((json: Plan[]) => {
         setPlans(json);
         setPlansError(null);
       })
-      .catch((err) => {
-        setPlansError(err.message);
+      .catch((err: unknown) => {
+        const errorMessage =
+          err instanceof Error ? err.message : "Erro ao buscar planos";
+        setPlansError(errorMessage);
         setPlans([]);
       })
       .finally(() => setPlansLoading(false));
@@ -207,19 +226,21 @@ const SubscriptionManagement = () => {
         if (!res.ok) throw new Error("Erro ao buscar assinaturas");
         return res.json();
       })
-      .then((json) => {
+      .then((json: Subscription[]) => {
         setSubscriptions(json);
         setSubsError(null);
       })
-      .catch((err) => {
-        setSubsError(err.message);
+      .catch((err: unknown) => {
+        const errorMessage =
+          err instanceof Error ? err.message : "Erro ao buscar assinaturas";
+        setSubsError(errorMessage);
         setSubscriptions([]);
       })
       .finally(() => setSubsLoading(false));
   }, []);
 
   // Funções CRUD de Planos
-  const createPlan = async (plan) => {
+  const createPlan = async (plan: Plan) => {
     try {
       const res = await fetch("/api/planos", {
         method: "POST",
@@ -229,11 +250,13 @@ const SubscriptionManagement = () => {
       if (!res.ok) throw new Error("Erro ao criar plano");
       toast.success("Plano criado com sucesso!");
       reloadPlans();
-    } catch (err) {
-      toast.error(err.message || "Erro ao criar plano");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar plano";
+      toast.error(errorMessage);
     }
   };
-  const updatePlan = async (plan) => {
+  const updatePlan = async (plan: Plan) => {
     try {
       const res = await fetch(`/api/planos/${plan.id}`, {
         method: "PUT",
@@ -243,30 +266,34 @@ const SubscriptionManagement = () => {
       if (!res.ok) throw new Error("Erro ao editar plano");
       toast.success("Plano editado com sucesso!");
       reloadPlans();
-    } catch (err) {
-      toast.error(err.message || "Erro ao editar plano");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao editar plano";
+      toast.error(errorMessage);
     }
   };
-  const deletePlan = async (id) => {
+  const deletePlan = async (id: string) => {
     try {
       const res = await fetch(`/api/planos/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Erro ao remover plano");
       toast.success("Plano removido com sucesso!");
       reloadPlans();
-    } catch (err) {
-      toast.error(err.message || "Erro ao remover plano");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao remover plano";
+      toast.error(errorMessage);
     }
   };
   const reloadPlans = () => {
     setPlansLoading(true);
     fetch("/api/planos")
       .then((res) => res.json())
-      .then((json) => setPlans(json))
+      .then((json: Plan[]) => setPlans(json))
       .finally(() => setPlansLoading(false));
   };
 
   // Funções CRUD de Assinaturas
-  const createSubscription = async (sub) => {
+  const createSubscription = async (sub: Subscription) => {
     try {
       const res = await fetch("/api/assinaturas", {
         method: "POST",
@@ -276,11 +303,13 @@ const SubscriptionManagement = () => {
       if (!res.ok) throw new Error("Erro ao criar assinatura");
       toast.success("Assinatura criada com sucesso!");
       reloadSubscriptions();
-    } catch (err) {
-      toast.error(err.message || "Erro ao criar assinatura");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar assinatura";
+      toast.error(errorMessage);
     }
   };
-  const updateSubscription = async (sub) => {
+  const updateSubscription = async (sub: Subscription) => {
     try {
       const res = await fetch(`/api/assinaturas/${sub.id}`, {
         method: "PUT",
@@ -290,25 +319,29 @@ const SubscriptionManagement = () => {
       if (!res.ok) throw new Error("Erro ao editar assinatura");
       toast.success("Assinatura editada com sucesso!");
       reloadSubscriptions();
-    } catch (err) {
-      toast.error(err.message || "Erro ao editar assinatura");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao editar assinatura";
+      toast.error(errorMessage);
     }
   };
-  const deleteSubscription = async (id) => {
+  const deleteSubscription = async (id: string) => {
     try {
       const res = await fetch(`/api/assinaturas/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Erro ao remover assinatura");
       toast.success("Assinatura removida com sucesso!");
       reloadSubscriptions();
-    } catch (err) {
-      toast.error(err.message || "Erro ao remover assinatura");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao remover assinatura";
+      toast.error(errorMessage);
     }
   };
   const reloadSubscriptions = () => {
     setSubsLoading(true);
     fetch("/api/assinaturas")
       .then((res) => res.json())
-      .then((json) => setSubscriptions(json))
+      .then((json: Subscription[]) => setSubscriptions(json))
       .finally(() => setSubsLoading(false));
   };
 
@@ -430,7 +463,7 @@ const SubscriptionManagement = () => {
       {/* Modal de Plano */}
       {showPlanModal && (
         <PlanModal
-          plan={editingPlan}
+          plan={editingPlan ?? undefined}
           onClose={() => setShowPlanModal(false)}
           onSave={updatePlan}
         />

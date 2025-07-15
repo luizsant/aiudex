@@ -223,8 +223,10 @@ const UserManagement = () => {
       setIsCreateModalOpen(false);
       resetForm();
       toast.success("Usuário criado com sucesso!");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar usuário");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao criar usuário";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -256,8 +258,10 @@ const UserManagement = () => {
       setSelectedUser(null);
       resetForm();
       toast.success("Usuário atualizado com sucesso!");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar usuário");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao atualizar usuário";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -278,8 +282,10 @@ const UserManagement = () => {
       } else {
         toast.error("Erro ao excluir usuário");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir usuário");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao excluir usuário";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -307,8 +313,10 @@ const UserManagement = () => {
       } else {
         toast.error("Erro ao enviar email");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao enviar email");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao enviar email";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -325,8 +333,10 @@ const UserManagement = () => {
       );
       setUsers(users.map((user) => (user.id === userId ? updatedUser : user)));
       toast.success(`Status do usuário alterado para ${newStatus}`);
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao alterar status");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao alterar status";
+      toast.error(errorMessage);
     }
   };
 
@@ -334,8 +344,10 @@ const UserManagement = () => {
     try {
       const tempPassword = await adminDataService.resetUserPassword(userId);
       toast.success(`Senha temporária gerada: ${tempPassword}`);
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao resetar senha");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao resetar senha";
+      toast.error(errorMessage);
     }
   };
 

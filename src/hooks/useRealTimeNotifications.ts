@@ -197,8 +197,6 @@ export const useRealTimeNotifications = () => {
       title: randomEvent.title,
       message: randomEvent.message,
       priority: randomEvent.priority as any,
-      actionUrl: "/admin",
-      actionLabel: "Ver Dashboard",
     });
   }, []);
 

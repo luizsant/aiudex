@@ -72,7 +72,9 @@ export const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({
       toast.success("Configurações importadas com sucesso!");
       setImportFile(null);
     } catch (error) {
-      toast.error(`Erro ao importar: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error(`Erro ao importar: ${errorMessage}`);
     }
   };
 

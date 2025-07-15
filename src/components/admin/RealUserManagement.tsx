@@ -155,8 +155,10 @@ const RealUserManagement = () => {
         setIsCreateModalOpen(false);
         resetForm();
       }
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar usuário");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao criar usuário";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -185,8 +187,10 @@ const RealUserManagement = () => {
         setSelectedUser(null);
         resetForm();
       }
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar usuário");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao atualizar usuário";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -202,8 +206,10 @@ const RealUserManagement = () => {
         setIsDeleteModalOpen(false);
         setSelectedUser(null);
       }
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir usuário");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao excluir usuário";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

@@ -40,11 +40,22 @@ import {
   ExternalLink,
   Settings,
 } from "lucide-react";
-import {
-  useAdminNotifications,
-  AdminNotification,
-} from "@/lib/admin-notifications";
+import { useAdminNotifications } from "@/lib/admin-notifications";
 import { cn } from "@/lib/utils";
+
+interface AdminNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  category: string;
+  priority: "low" | "medium" | "high" | "critical";
+  read: boolean;
+  timestamp: Date;
+  actionLabel?: string;
+  actionUrl?: string;
+  metadata?: Record<string, any>;
+}
 
 interface NotificationCenterProps {
   className?: string;

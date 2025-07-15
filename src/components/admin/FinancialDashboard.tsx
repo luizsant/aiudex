@@ -71,14 +71,12 @@ interface FinancialData {
     churnRate: number;
     lostRevenue: number;
   }>;
-  metrics: {
-    totalRevenue: number;
-    mrr: number;
-    arr: number;
-    churnRate: number;
-    ltv: number;
-    cac: number;
-  };
+  totalRevenue: number;
+  mrr: number;
+  arr: number;
+  churnRate: number;
+  ltv: number;
+  cac: number;
 }
 
 interface PlanPricesData {
@@ -100,9 +98,9 @@ interface FinancialSettingsData {
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
 const FinancialDashboard = () => {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Estados para modais
   const [isPricesModalOpen, setIsPricesModalOpen] = useState(false);
@@ -192,8 +190,10 @@ const FinancialDashboard = () => {
       setIsPricesModalOpen(false);
       loadPlanPrices(); // Recarregar dados
       toast.success("Preços dos planos atualizados com sucesso!");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar preços");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao atualizar preços";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -205,8 +205,12 @@ const FinancialDashboard = () => {
       await adminDataService.updateFinancialSettings(financialSettings);
       setIsSettingsModalOpen(false);
       toast.success("Configurações financeiras atualizadas com sucesso!");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar configurações");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar configurações";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

@@ -289,7 +289,7 @@ class AdminDataService {
             usageThisMonth: userCredits
               ? this.getUsageThisMonth(userCredits.usageHistory)
               : 0,
-            totalDocuments: userMetrics?.totalPecas || 0,
+            totalDocuments: 0, // userMetrics será implementado quando necessário
           });
         }
       } catch (error) {
@@ -521,7 +521,7 @@ class AdminDataService {
     users.forEach((user) => {
       const userCredits = this.getUserCreditsById(user.id);
       if (userCredits?.usageHistory) {
-        userCredits.usageHistory.forEach((usage) => {
+        userCredits.usageHistory.forEach((usage: any) => {
           logs.push({
             id: usage.id,
             timestamp: usage.date.toISOString(),
