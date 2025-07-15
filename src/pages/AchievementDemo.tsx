@@ -1,4 +1,3 @@
-import { AchievementTest } from "@/components/AchievementTest";
 import { AchievementTrophies } from "@/components/AchievementTrophies";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -57,7 +56,9 @@ export const AchievementDemo = () => {
             <CardTitle>Teste de Conquistas</CardTitle>
           </CardHeader>
           <CardContent>
-            <AchievementTest />
+            {/* The AchievementTest component was removed from imports, so this will cause an error */}
+            {/* <AchievementTest /> */}
+            <p>AchievementTest component is no longer available.</p>
           </CardContent>
         </Card>
 

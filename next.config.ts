@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Otimizações de performance
-  swcMinify: true,
   compress: true,
 
   // Configurações de imagem
