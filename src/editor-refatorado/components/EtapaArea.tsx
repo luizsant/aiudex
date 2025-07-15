@@ -19,7 +19,7 @@ export const EtapaArea: React.FC<EtapaAreaProps> = ({
   const handleSelecionarArea = (area: string) => {
     actions.setAreaSelecionada(area);
     // Limpar peça selecionada quando mudar área
-    actions.setPecaSelecionada(null);
+    actions.setPecaSelecionada({ nome: "", desc: "" });
     // Limpar busca
     setBuscaPeca("");
   };
@@ -76,11 +76,12 @@ export const EtapaArea: React.FC<EtapaAreaProps> = ({
                 `}>
                 <span className="text-lg">
                   {(() => {
-                    const Icon =
-                      LucideIcons[
-                        ICONES_AREAS[area as keyof typeof ICONES_AREAS]
-                      ];
-                    return Icon ? <Icon className="w-5 h-5 mr-1" /> : null;
+                    const IconComponent = (LucideIcons as any)[
+                      ICONES_AREAS[area as keyof typeof ICONES_AREAS]
+                    ];
+                    return IconComponent ? (
+                      <IconComponent className="w-5 h-5 mr-1" />
+                    ) : null;
                   })()}
                 </span>
                 <span>{area}</span>
@@ -129,7 +130,9 @@ export const EtapaArea: React.FC<EtapaAreaProps> = ({
                   <Badge
                     variant="secondary"
                     className="bg-green-100 text-green-800 border-green-300 cursor-pointer hover:bg-green-200 transition-colors"
-                    onClick={() => actions.setPecaSelecionada(null)}>
+                    onClick={() =>
+                      actions.setPecaSelecionada({ nome: "", desc: "" })
+                    }>
                     {state.pecaSelecionada.nome}
                     <X className="w-3 h-3 ml-1" />
                   </Badge>

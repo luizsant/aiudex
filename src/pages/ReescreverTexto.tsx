@@ -316,10 +316,17 @@ RESPONDA APENAS COM O TEXTO REESCRITO, sem explicações ou comentários adicion
     } catch (err) {
       console.error("🔍 [DEBUG] Erro na função reescreverTexto:", err);
       setProgresso(100);
-      setLogs((l) => [...l, `❌ Erro ao reescrever texto: ${err.message}`]);
+      setLogs((l) => [
+        ...l,
+        `❌ Erro ao reescrever texto: ${
+          err instanceof Error ? err.message : "Erro desconhecido"
+        }`,
+      ]);
       toast({
         title: "Erro",
-        description: `Não foi possível reescrever o texto: ${err.message}`,
+        description: `Não foi possível reescrever o texto: ${
+          err instanceof Error ? err.message : "Erro desconhecido"
+        }`,
       });
     } finally {
       setRequisitando(false);
@@ -337,8 +344,10 @@ RESPONDA APENAS COM O TEXTO REESCRITO, sem explicações ou comentários adicion
       const range = document.createRange();
       range.selectNodeContents(el);
       const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
       document.execCommand("copy");
       document.body.removeChild(el);
       toast({

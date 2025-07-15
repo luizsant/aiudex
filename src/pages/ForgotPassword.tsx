@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Scale, ArrowLeft, Mail } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -52,7 +52,7 @@ const ForgotPassword = () => {
                 tente novamente
               </button>
             </div>
-            <Link to="/login">
+            <Link href="/login">
               <Button variant="outline" className="w-full">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Voltar ao Login
@@ -103,7 +103,7 @@ const ForgotPassword = () => {
               {isLoading ? "Enviando..." : "Enviar Instruções"}
             </Button>
 
-            <Link to="/login">
+            <Link href="/login">
               <Button variant="outline" className="w-full">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Voltar ao Login

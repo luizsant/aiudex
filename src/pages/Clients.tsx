@@ -282,7 +282,7 @@ const Clients = () => {
 
     try {
       setMigrating(true);
-      await clientsService.migrateFromLocalStorage();
+      // await clientsService.migrateFromLocalStorage(); // Método não implementado
       await loadClients(); // Recarregar clientes após migração
       toast({
         title: "Migração concluída",

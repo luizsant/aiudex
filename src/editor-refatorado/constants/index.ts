@@ -25,7 +25,7 @@ export const ETAPAS = [
 ];
 
 // Mapeamento dos ícones
-export const ICON_MAP = {
+export const ICON_MAP: Record<string, any> = {
   Users,
   Gavel,
   FileText,

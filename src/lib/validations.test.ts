@@ -27,7 +27,7 @@ describe("Login Schema", () => {
     const result = loginSchema.safeParse(invalidData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors[0].message).toBe("Email inválido");
+      expect(result.error.issues[0].message).toBe("Email inválido");
     }
   });
 
@@ -40,7 +40,7 @@ describe("Login Schema", () => {
     const result = loginSchema.safeParse(invalidData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors[0].message).toBe(
+      expect(result.error.issues[0].message).toBe(
         "Senha deve ter pelo menos 6 caracteres"
       );
     }
@@ -74,7 +74,7 @@ describe("Register Schema", () => {
     const result = registerSchema.safeParse(invalidData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors[0].message).toBe("Senhas não coincidem");
+      expect(result.error.issues[0].message).toBe("Senhas não coincidem");
     }
   });
 

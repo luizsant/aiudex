@@ -282,117 +282,121 @@ const Settings = () => {
     }
   }, []);
 
-  // Carregar configurações do escritório ao inicializar
+  // Carregar configurações do escritório
   useEffect(() => {
-    const config = getOfficeConfig();
+    const loadOfficeConfig = async () => {
+      const config = await getOfficeConfig();
 
-    // Obter usuário logado para usar como padrão
-    const currentUser = localStorage.getItem("legalai_user");
-    let loggedInUser = null;
+      // Obter usuário logado para usar como padrão
+      const currentUser = localStorage.getItem("legalai_user");
+      let loggedInUser = null;
 
-    if (currentUser) {
-      try {
-        const userData = JSON.parse(currentUser);
-        loggedInUser = getTestUser(userData.email);
-      } catch (error) {
-        console.error("Erro ao obter usuário logado:", error);
+      if (currentUser) {
+        try {
+          const userData = JSON.parse(currentUser);
+          loggedInUser = getTestUser(userData.email);
+        } catch (error) {
+          console.error("Erro ao obter usuário logado:", error);
+        }
       }
-    }
 
-    // Se não há configuração salva e há usuário logado, usar o nome do usuário
-    if (!localStorage.getItem("legalai_office_config") && loggedInUser) {
-      // Função para determinar o título (Dr./Dra.) baseado no nome
-      const getLawyerTitle = (name: string): string => {
-        // Se o nome já começa com Dr. ou Dra., retorna como está
-        if (name.startsWith("Dr. ") || name.startsWith("Dra. ")) {
-          return name;
-        }
+      // Se não há configuração salva e há usuário logado, usar o nome do usuário
+      if (!localStorage.getItem("legalai_office_config") && loggedInUser) {
+        // Função para determinar o título (Dr./Dra.) baseado no nome
+        const getLawyerTitle = (name: string): string => {
+          // Se o nome já começa com Dr. ou Dra., retorna como está
+          if (name.startsWith("Dr. ") || name.startsWith("Dra. ")) {
+            return name;
+          }
 
-        // Lista de nomes femininos comuns para determinar Dra.
-        const femaleNames = [
-          "ana",
-          "maria",
-          "juliana",
-          "camila",
-          "fernanda",
-          "patricia",
-          "sandra",
-          "lucia",
-          "carla",
-          "adriana",
-          "vanessa",
-          "daniela",
-          "gabriela",
-          "amanda",
-          "carolina",
-          "beatriz",
-          "leticia",
-          "mariana",
-          "isabela",
-          "sofia",
-          "valentina",
-          "laura",
-          "clara",
-          "alice",
-          "helena",
-          "luisa",
-          "manuela",
-          "cecilia",
-          "agatha",
-          "elisa",
-          "lorena",
-          "mirella",
-          "melissa",
-          "yasmin",
-          "isabella",
-          "rafaela",
-          "giovanna",
-          "sarah",
-          "julia",
-          "nicole",
-          "victoria",
-          "barbara",
-          "debora",
-          "elaine",
-          "fatima",
-          "gisele",
-          "hilda",
-          "irene",
-          "josefa",
-          "karen",
-          "lilian",
-          "marcia",
-          "nadia",
-          "olga",
-          "paula",
-          "quenia",
-          "rosa",
-          "silvia",
-          "tatiana",
-          "ursula",
-          "vera",
-          "wanda",
-          "xenia",
-          "yara",
-          "zenaida",
-        ];
+          // Lista de nomes femininos comuns para determinar Dra.
+          const femaleNames = [
+            "ana",
+            "maria",
+            "juliana",
+            "camila",
+            "fernanda",
+            "patricia",
+            "sandra",
+            "lucia",
+            "carla",
+            "adriana",
+            "vanessa",
+            "daniela",
+            "gabriela",
+            "amanda",
+            "carolina",
+            "beatriz",
+            "leticia",
+            "mariana",
+            "isabela",
+            "sofia",
+            "valentina",
+            "laura",
+            "clara",
+            "alice",
+            "helena",
+            "luisa",
+            "manuela",
+            "cecilia",
+            "agatha",
+            "elisa",
+            "lorena",
+            "mirella",
+            "melissa",
+            "yasmin",
+            "isabella",
+            "rafaela",
+            "giovanna",
+            "sarah",
+            "julia",
+            "nicole",
+            "victoria",
+            "barbara",
+            "debora",
+            "elaine",
+            "fatima",
+            "gisele",
+            "hilda",
+            "irene",
+            "josefa",
+            "karen",
+            "lilian",
+            "marcia",
+            "nadia",
+            "olga",
+            "paula",
+            "quenia",
+            "rosa",
+            "silvia",
+            "tatiana",
+            "ursula",
+            "vera",
+            "wanda",
+            "xenia",
+            "yara",
+            "zenaida",
+          ];
 
-        // Extrair o primeiro nome (antes do espaço)
-        const firstName = name.toLowerCase().split(" ")[0];
+          // Extrair o primeiro nome (antes do espaço)
+          const firstName = name.toLowerCase().split(" ")[0];
 
-        // Verificar se é um nome feminino
-        if (femaleNames.includes(firstName)) {
-          return `Dra. ${name}`;
-        }
+          // Verificar se é um nome feminino
+          if (femaleNames.includes(firstName)) {
+            return `Dra. ${name}`;
+          }
 
-        // Padrão: usar Dr. para nomes masculinos ou não identificados
-        return `Dr. ${name}`;
-      };
+          // Padrão: usar Dr. para nomes masculinos ou não identificados
+          return `Dr. ${name}`;
+        };
 
-      config.lawyerName = getLawyerTitle(loggedInUser.name);
-    }
+        config.lawyerName = getLawyerTitle(loggedInUser.name);
+      }
 
-    setOfficeConfig(config);
+      setOfficeConfig(config);
+    };
+
+    loadOfficeConfig();
   }, []);
 
   // Carregar dados da assinatura atual
@@ -401,10 +405,11 @@ const Settings = () => {
     setCurrentSubscription(subscription);
   }, []);
 
-  const handleSave = (section: string) => {
+  const handleSave = async (section: string) => {
     if (section === "documentos") {
       // Salvar configurações de template usando o hook
-      if (saveSettings(templateSettings)) {
+      const success = await saveSettings(templateSettings);
+      if (success) {
         toast.success(`Configurações de ${section} salvas com sucesso!`);
       } else {
         toast.error(`Erro ao salvar configurações de ${section}.`);
@@ -437,8 +442,9 @@ const Settings = () => {
     setOfficeConfig((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveOfficeConfig = () => {
-    if (saveOfficeConfig(officeConfig)) {
+  const handleSaveOfficeConfig = async () => {
+    const success = await saveOfficeConfig(officeConfig);
+    if (success) {
       toast.success("Configurações do escritório salvas com sucesso!");
       toast.info(
         "As configurações serão aplicadas automaticamente nos templates de automação."

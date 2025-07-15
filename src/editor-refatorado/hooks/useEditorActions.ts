@@ -724,7 +724,7 @@ Gere a petição completa agora, utilizando EXCLUSIVAMENTE os dados fornecidos a
     }
 
     // Validação dos dados obrigatórios
-    const dadosFaltando = [];
+    const dadosFaltando: string[] = [];
     if (!state.areaSelecionada) dadosFaltando.push("Área do Direito");
     if (!state.pecaSelecionada) dadosFaltando.push("Tipo de Peça");
     if (state.clientes.length === 0) dadosFaltando.push("Clientes");

@@ -6,7 +6,7 @@ import {
 } from "./document-service";
 
 // Função para testar as variáveis do escritório
-export const testOfficeVariables = () => {
+export const testOfficeVariables = async () => {
   // Carregar configuração atual
   const config = getOfficeConfig();
 
@@ -32,7 +32,7 @@ ____________________________________
   `;
 
   // Aplicar variáveis do escritório
-  const resultWithOffice = replaceOfficeVariables(testTemplate);
+  const resultWithOffice = await replaceOfficeVariables(testTemplate);
 
   // Cliente de teste
   const testClient = {
