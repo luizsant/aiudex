@@ -19,10 +19,10 @@ export default function MetricsDisplay({
   });
 
   useEffect(() => {
-    const loadMetrics = () => {
-      const userMetrics = MetricsService.getUserMetrics();
-      const generalStats = MetricsService.getGeneralStats();
-      const tempoMedio = MetricsService.getTempoMedioReal();
+    const loadMetrics = async () => {
+      // Corrigido: aguardar as Promises
+      const generalStats = await MetricsService.getGeneralStats();
+      const tempoMedio = await MetricsService.getTempoMedioReal();
 
       setMetrics({
         pecasGeradas: generalStats.pecasGeradas,
