@@ -1,0 +1,828 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  passwordHash String  @map("password_hash")
+  name        String
+  oabNumber   String?  @map("oab_number")
+  firm        String?
+  role        UserRole @default(ADVOGADO)
+  planId      String   @map("plan_id")
+  status      UserStatus @default(ATIVO)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  lastLogin   DateTime? @map("last_login")
+
+  // Campos para Asaas
+  asaasCustomerId String? @map("asaas_customer_id")
+  phone          String?
+  cpfCnpj        String?
+  postalCode     String?
+  address        String?
+  addressNumber  String?
+  complement     String?
+  province       String?
+
+  // Relacionamentos
+  plan          Plan @relation(fields: [planId], references: [id])
+  subscription  Subscription?
+  clients       Client[]
+  documents     Document[]
+  templates     Template[]
+  creditsUsage  CreditsUsage[]
+  adminLogs     AdminLog[]
+  sessions      UserSession[]
+  backups       Backup[]
+  notifications Notification[]
+  paymentMethods PaymentMethod[]
+  invoices      Invoice[]
+  payments      Payment[]
+  templateSettings TemplateSettings[]
+  officeConfig  OfficeConfig?
+  achievements  Achievement[]
+  userProgress  UserProgress?
+  userCredits   UserCredits?
+  userMetrics   UserMetrics?
+  kanbanTasks   KanbanTask[]
+
+  @@map("users")
+}
+
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  price       Float
+  credits     Int      // -1 para ilimitado
+  features    String[] // Array de features
+  maxClients  Int      @default(5) @map("max_clients")
+  maxDocuments Int     @default(10) @map("max_documents")
+  aiFeatures  Boolean  @default(false) @map("ai_features")
+  premiumSupport Boolean @default(false) @map("premium_support")
+  priority    PlanPriority @default(FREE)
+  active      Boolean  @default(true)
+  
+  // Novos campos para sistema de pagamento
+  stripeProductId String? @map("stripe_product_id")
+  stripePriceId   String? @map("stripe_price_id")
+  mercadopagoId   String? @map("mercadopago_id")
+  billingInterval BillingInterval @default(MONTHLY)
+  trialDays       Int     @default(0) @map("trial_days")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  users         User[]
+  subscriptions Subscription[]
+  userCredits   UserCredits[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  planId        String   @map("plan_id")
+  status        SubscriptionStatus @default(ACTIVE)
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  nextBilling   DateTime? @map("next_billing")
+  amount        Float
+  paymentMethod String   @map("payment_method")
+  autoRenew     Boolean  @default(true) @map("auto_renew")
+  
+  // Novos campos para integração com gateways
+  stripeSubscriptionId String? @map("stripe_subscription_id")
+  mercadopagoSubscriptionId String? @map("mercadopago_subscription_id")
+  trialEndsAt   DateTime? @map("trial_ends_at")
+  canceledAt    DateTime? @map("canceled_at")
+  cancelReason  String?   @map("cancel_reason")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  subscriptionId String?  @map("subscription_id")
+  userId         String   @map("user_id")
+  amount         Float
+  currency       String   @default("BRL")
+  status         PaymentStatus @default(PENDING)
+  paymentMethod  String   @map("payment_method")
+  
+  // IDs dos gateways
+  stripePaymentId String? @map("stripe_payment_id")
+  mercadopagoPaymentId String? @map("mercadopago_payment_id")
+  asaasPaymentId String? @map("asaas_payment_id")
+  pixTransactionId String? @map("pix_transaction_id")
+  
+  // Dados adicionais
+  transactionId  String?  @map("transaction_id")
+  gatewayResponse Json?   @map("gateway_response")
+  failureReason  String?  @map("failure_reason")
+  refundedAmount Float?   @map("refunded_amount")
+  metadata       Json?    // Dados adicionais
+  
+  // Datas importantes
+  paidAt         DateTime? @map("paid_at")
+  refundedAt     DateTime? @map("refunded_at")
+  expiresAt      DateTime? @map("expires_at")
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  invoice Invoice?
+  pixPayment PixPayment?
+
+  @@map("payments")
+}
+
+model PaymentMethod {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  type        PaymentMethodType
+  
+  // Dados do cartão (tokenizados)
+  cardLast4   String?  @map("card_last4")
+  cardBrand   String?  @map("card_brand")
+  cardExpMonth Int?    @map("card_exp_month")
+  cardExpYear Int?     @map("card_exp_year")
+  
+  // IDs dos gateways
+  stripePaymentMethodId String? @map("stripe_payment_method_id")
+  mercadopagoCardId     String? @map("mercadopago_card_id")
+  
+  // Configurações
+  isDefault   Boolean  @default(false) @map("is_default")
+  active      Boolean  @default(true)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  paymentId   String?  @unique @map("payment_id")
+  
+  // Dados da fatura
+  number      String   @unique
+  amount      Float
+  currency    String   @default("BRL")
+  tax         Float    @default(0)
+  discount    Float    @default(0)
+  total       Float
+  
+  // Status e datas
+  status      InvoiceStatus @default(PENDING)
+  dueDate     DateTime @map("due_date")
+  paidAt      DateTime? @map("paid_at")
+  sentAt      DateTime? @map("sent_at")
+  
+  // Dados do cliente (snapshot)
+  customerName    String @map("customer_name")
+  customerEmail   String @map("customer_email")
+  customerAddress String? @map("customer_address")
+  customerDocument String? @map("customer_document")
+  
+  // Itens da fatura
+  items       Json     // Array de itens
+  metadata    Json?    // Dados adicionais
+  
+  // URLs e arquivos
+  pdfUrl      String?  @map("pdf_url")
+  downloadUrl String?  @map("download_url")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@map("invoices")
+}
+
+model PixPayment {
+  id          String   @id @default(uuid())
+  paymentId   String   @unique @map("payment_id")
+  
+  // Dados PIX
+  pixKey      String   @map("pix_key")
+  qrCode      String   @map("qr_code")
+  qrCodeUrl   String?  @map("qr_code_url")
+  copyPaste   String   @map("copy_paste")
+  
+  // Informações do pagamento
+  amount      Float
+  description String?
+  
+  // Status e controle
+  status      PixStatus @default(PENDING)
+  expiresAt   DateTime @map("expires_at")
+  paidAt      DateTime? @map("paid_at")
+  
+  // Dados do recebedor
+  merchantName String @map("merchant_name")
+  merchantCity String @map("merchant_city")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@map("pix_payments")
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  source      WebhookSource
+  eventType   String   @map("event_type")
+  eventId     String   @map("event_id")
+  
+  // Dados do evento
+  data        Json
+  signature   String?
+  
+  // Processamento
+  processed   Boolean  @default(false)
+  processedAt DateTime? @map("processed_at")
+  attempts    Int      @default(0)
+  lastError   String?  @map("last_error")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("webhook_events")
+}
+
+model Client {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  email       String?
+  phone       String?
+  cpf         String?
+  rg          String?
+  
+  // Endereço
+  cep         String?
+  street      String?
+  number      String?
+  complement  String?
+  neighborhood String?
+  city        String?
+  state       String?
+  address     String?  // Endereço formatado para compatibilidade
+  
+  // Dados pessoais
+  birthDate   String?
+  maritalStatus String?
+  nationality String?  @default("Brasileira")
+  profession  String?
+  
+  // Dados do processo
+  processes   Int      @default(0)
+  status      String   @default("Ativo")
+  observations String?
+  
+  // Metadados
+  metadata    Json?    // Dados adicionais
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("clients")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  content     String
+  type        DocumentType @default(PETICAO)
+  area        String?  // Área do direito
+  status      DocumentStatus @default(DRAFT)
+  metadata    Json?    // Dados adicionais
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Template {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  category    String
+  content     String
+  variables   String[] // Array de variáveis do template
+  isCustom    Boolean  @default(false) @map("is_custom")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("templates")
+}
+
+model CreditsUsage {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  action      String   // Tipo de ação que consumiu créditos
+  creditsUsed Int      @map("credits_used")
+  description String?
+  metadata    Json?    // Dados adicionais
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credits_usage")
+}
+
+model AdminLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  resource   String?
+  resourceId String?  @map("resource_id")
+  details    String?
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  severity   LogSeverity @default(INFO)
+  category   LogCategory @default(GENERAL)
+  success    Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relacionamentos
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("admin_logs")
+}
+
+model UserSession {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+model Backup {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  type        BackupType @default(FULL)
+  size        Int      // Tamanho em bytes
+  checksum    String
+  compressed  Boolean  @default(true)
+  encrypted   Boolean  @default(false)
+  retention   DateTime // Data de expiração
+  metadata    Json?    // Informações adicionais
+  filePath    String?  @map("file_path")
+  status      BackupStatus @default(COMPLETED)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relacionamentos
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("backups")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  category  String?
+  read      Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  readAt    DateTime? @map("read_at")
+
+  // Relacionamentos
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  type        ReportType @default(USERS)
+  config      Json     // Configurações do relatório
+  data        Json?    // Dados do relatório gerado
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  generatedAt DateTime? @map("generated_at")
+
+  @@map("reports")
+}
+
+model TemplateSettings {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  defaultFont String   @default("Times New Roman")
+  fontSize    String   @default("12pt")
+  lineSpacing String   @default("1.5")
+  margins     String   @default("2.5cm")
+  paragraphSpacing String?  // Espaçamento entre parágrafos
+  jurisprudenceIndent String? // Recuo para jurisprudência
+  jurisprudenceFontSize String? // Tamanho da fonte da jurisprudência
+  firstLineIndent String? // Recuo da primeira linha
+  includeWatermark Boolean @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamento
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("template_settings")
+}
+
+model OfficeConfig {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  
+  // Dados do advogado
+  lawyerName  String   @default("Dr. João Silva")
+  oabNumber   String   @default("123456")
+  oabState    String   @default("SP")
+  
+  // Dados do escritório
+  officeName  String?  @map("office_name")
+  officeCnpj  String?  @map("office_cnpj")
+  officePhone String   @default("(11) 99999-9999") @map("office_phone")
+  officeEmail String   @default("contato@escritorio.com") @map("office_email")
+  officeWebsite String? @map("office_website")
+  
+  // Endereço detalhado
+  officeStreet String? @map("office_street")
+  officeNumber String? @map("office_number")
+  officeComplement String? @map("office_complement")
+  officeNeighborhood String? @map("office_neighborhood")
+  officeCity String? @map("office_city")
+  officeCep String? @map("office_cep")
+  officeAddress String @default("Rua das Flores, 123 - Centro, São Paulo/SP") @map("office_address")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamento
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("office_configs")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  achievementId String @map("achievement_id") // ID da conquista (ex: "first_piece")
+  title       String
+  description String
+  icon        String
+  category    String   // "productivity" | "quality" | "exploration" | "mastery" | "social"
+  rarity      String   // "common" | "rare" | "epic" | "legendary"
+  progress    Int      @default(0)
+  maxProgress Int
+  unlocked    Boolean  @default(false)
+  unlockedAt  DateTime? @map("unlocked_at")
+  points      Int
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamento
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("achievements")
+}
+
+model UserProgress {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  totalPoints   Int      @default(0) @map("total_points")
+  level         Int      @default(1)
+  streak        Int      @default(0)
+  lastActivity  DateTime @default(now()) @map("last_activity")
+  weeklyGoal    Int      @default(10) @map("weekly_goal")
+  weeklyProgress Int     @default(0) @map("weekly_progress")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relacionamento
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_progress")
+}
+
+model UserCredits {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  planId        String   @map("plan_id")
+  currentCredits Int     @default(0) @map("current_credits")
+  maxCredits    Int     @default(0) @map("max_credits")
+  resetDate     DateTime @map("reset_date")
+  lastReset     DateTime @map("last_reset")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id])
+
+  // Histórico de uso
+  usageHistory CreditUsage[]
+
+  @@map("user_credits")
+}
+
+model CreditUsage {
+  id          String   @id @default(uuid())
+  userCreditsId String @map("user_credits_id")
+  date        DateTime
+  type        String   // "petition_generation" | "ai_analysis" | "jurisprudence_search"
+  description String
+  creditsUsed Int      @map("credits_used")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relacionamento
+  userCredits UserCredits @relation(fields: [userCreditsId], references: [id], onDelete: Cascade)
+
+  @@map("credit_usage")
+}
+
+model UserMetrics {
+  id                String   @id @default(uuid())
+  userId            String   @unique @map("user_id")
+  totalPecas        Int      @default(0) @map("total_pecas")
+  totalTempo        Int      @default(0) @map("total_tempo") // em minutos
+  primeiraPeca      DateTime? @map("primeira_peca")
+  ultimaAtualizacao DateTime @default(now()) @map("ultima_atualizacao")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pecasGeradas PecaGerada[]
+
+  @@map("user_metrics")
+}
+
+model PecaGerada {
+  id           String   @id @default(uuid())
+  metricsId    String   @map("metrics_id")
+  tipo         String
+  tempoCriacao Int      @map("tempo_criacao") // em minutos
+  data         DateTime @default(now())
+  area         String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relacionamentos
+  metrics UserMetrics @relation(fields: [metricsId], references: [id], onDelete: Cascade)
+
+  @@map("pecas_geradas")
+}
+
+model KanbanTask {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?
+  client      String?
+  process     String?
+  dueDate     DateTime? @map("due_date")
+  tags        String[] // Array de tags
+  status      String   @default("todo") // todo, doing, waiting, done
+  priority    String   @default("medium") // low, medium, high
+  time        Int      @default(0) // tempo em segundos
+  running     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timer KanbanTimer?
+  agenda KanbanAgenda[]
+
+  @@map("kanban_tasks")
+}
+
+model KanbanTimer {
+  id        String   @id @default(uuid())
+  taskId    String   @unique @map("task_id")
+  startTime DateTime? @map("start_time")
+  isRunning Boolean  @default(false) @map("is_running")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  task KanbanTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("kanban_timers")
+}
+
+model KanbanAgenda {
+  id          String   @id @default(uuid())
+  taskId      String   @map("task_id")
+  date        DateTime
+  time        String
+  duration    Int      @default(60) // duração em minutos
+  location    String?
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relacionamentos
+  task KanbanTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("kanban_agenda")
+}
+
+// Enums existentes
+enum UserRole {
+  ADMIN
+  ADVOGADO
+  ESTAGIARIO
+}
+
+enum UserStatus {
+  ATIVO
+  INATIVO
+  SUSPENSO
+  PENDENTE
+}
+
+enum PlanPriority {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  SUSPENDED
+  TRIAL
+  PAST_DUE
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+  EXPIRED
+}
+
+enum DocumentType {
+  PETICAO
+  CONTRATO
+  RECURSO
+  DEFESA
+  PARECER
+  TEMPLATE
+}
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LogSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+  INFO
+}
+
+enum LogCategory {
+  GENERAL
+  SECURITY
+  PAYMENT
+  SYSTEM
+  USER
+  ADMIN
+}
+
+enum BackupType {
+  FULL
+  INCREMENTAL
+  DIFFERENTIAL
+}
+
+enum BackupStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+}
+
+enum ReportType {
+  USERS
+  FINANCIAL
+  ACTIVITY
+  ANALYTICS
+}
+
+enum ReportStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+// Novos enums para sistema de pagamento
+enum BillingInterval {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum PaymentMethodType {
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  BANK_TRANSFER
+  BOLETO
+}
+
+enum InvoiceStatus {
+  PENDING
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum PixStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum WebhookSource {
+  STRIPE
+  MERCADOPAGO
+  PIX
+  INTERNAL
+} 
